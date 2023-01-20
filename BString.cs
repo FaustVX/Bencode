@@ -27,13 +27,13 @@ public sealed class BString : IBToken
         set => Value = (string)value;
     }
 
-    public static IBToken DecodeImpl(ReadOnlySpan<byte> data, out int length)
+    public static IBToken DecodeImpl(ReadOnlySpanStream data, out int length)
     {
         (var size, var offset) = ParseLength(0, data);
         length = size + offset;
-        return new BString(data.Slice(offset, size));
+        return new BString(data.Slice(offset, size).Span);
 
-        static (int value, int length) ParseLength(int value, ReadOnlySpan<byte> data)
+        static (int value, int length) ParseLength(int value, ReadOnlySpanStream data)
         => data switch
         {
             [var i and >= (byte)'0' and <= (byte)'9', (byte)':', ..] => (value * 10 + (i - (byte)'0'), 2),

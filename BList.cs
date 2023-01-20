@@ -9,7 +9,7 @@ public sealed class BList : IBToken
         set => Value = (List<IBTokenValue>)value;
     }
 
-    public static IBToken DecodeImpl(ReadOnlySpan<byte> data, out int length)
+    public static IBToken DecodeImpl(ReadOnlySpanStream data, out int length)
     {
         if (data[0] != (byte)'l')
             throw new ArgumentException("Message sould start with 'l'", nameof(data));

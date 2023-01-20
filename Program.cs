@@ -1,5 +1,5 @@
-var data = "3:bar"u8;
-var token = Torrents.IBToken.Decode(data, out var length);
+﻿var data = System.Text.Encoding.UTF8.GetBytes("3:bar");
+var token = Torrents.IBToken.Decode(new(data), out var length);
 var encode = token.Encode();
 var ok = length == data.Length;
 var same = encode.SequenceEqual(data);

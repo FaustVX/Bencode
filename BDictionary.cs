@@ -9,7 +9,7 @@ public sealed class BDictionary : IBToken
         set => Value = (Dictionary<string, IBTokenValue>)value;
     }
 
-    public static IBToken DecodeImpl(ReadOnlySpan<byte> data, out int length)
+    public static IBToken DecodeImpl(ReadOnlySpanStream data, out int length)
     {
         if (data[0] != (byte)'d')
             throw new ArgumentException("Message sould start with 'd'", nameof(data));
