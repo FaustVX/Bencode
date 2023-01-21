@@ -16,7 +16,7 @@ public sealed class BDictionary : IBToken
     public static IBToken DecodeImpl(SliceableStream data, out int length)
     {
         if (data[0] != (byte)'d')
-            throw new ArgumentException("Message sould start with 'd'", nameof(data));
+            throw new ArgumentException("Message should start with 'd'", nameof(data));
         var list = new BDictionary();
         length = 1;
         while (data[length] != (byte)'e')

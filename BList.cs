@@ -16,7 +16,7 @@ public sealed class BList : IBToken
     public static IBToken DecodeImpl(SliceableStream data, out int length)
     {
         if (data[0] != (byte)'l')
-            throw new ArgumentException("Message sould start with 'l'", nameof(data));
+            throw new ArgumentException("Message should start with 'l'", nameof(data));
         var list = new BList();
         length = 1;
         while (data[length] != (byte)'e')

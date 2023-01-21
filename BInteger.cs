@@ -31,7 +31,7 @@ public sealed class BInteger : IBToken
     public static IBToken DecodeImpl(SliceableStream data, out int length)
     {
         if (data[0] != (byte)'i')
-            throw new ArgumentException("Message sould start with 'i'", nameof(data));
+            throw new ArgumentException("Message should start with 'i'", nameof(data));
         (var value, length) = Parse(0, data[1..]);
         length++;
         return new BInteger(value);
