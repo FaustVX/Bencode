@@ -2,11 +2,11 @@ namespace Torrents;
 
 public sealed class BDictionary : IBToken
 {
-    public Dictionary<string, IBTokenValue> Value { get; set; } = new();
+    public SortedDictionary<string, IBTokenValue> Value { get; set; } = new();
     object IBTokenValue.Value
     {
         get => Value;
-        set => Value = (Dictionary<string, IBTokenValue>)value;
+        set => Value = (SortedDictionary<string, IBTokenValue>)value;
     }
 
     public static IBToken DecodeImpl(SliceableStream data, out int length)
