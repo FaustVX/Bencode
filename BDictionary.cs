@@ -6,7 +6,11 @@ public sealed class BDictionary : IBToken
     object IBTokenValue.Value
     {
         get => Value;
-        set => Value = (SortedDictionary<string, IBTokenValue>)value;
+        set => Value = value switch
+        {
+            SortedDictionary<string, IBTokenValue> sd => sd,
+            IDictionary<string, IBTokenValue> id => new(id),
+        };
     }
 
     public static IBToken DecodeImpl(SliceableStream data, out int length)

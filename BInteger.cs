@@ -10,7 +10,17 @@ public sealed class BInteger : IBToken
     object IBTokenValue.Value
     {
         get => Value;
-        set => Value = (long)value;
+        set => Value = value switch
+        {
+            long v => v,
+            ulong v => (long)v,
+            int v => v,
+            uint v => v,
+            short v => v,
+            ushort v => v,
+            sbyte v => v,
+            byte v => v,
+        };
     }
 
     public BInteger(long value)

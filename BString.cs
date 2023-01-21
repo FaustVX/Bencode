@@ -29,7 +29,13 @@ public sealed class BString : IBToken
     object IBTokenValue.Value
     {
         get => Value;
-        set => Value = (string)value;
+        set
+        {
+            if (value is string s)
+                Value = s;
+            else if (value is byte[] b)
+                RawValue = b;
+        }
     }
 
     public static IBToken DecodeImpl(SliceableStream data, out int length)

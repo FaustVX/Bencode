@@ -6,7 +6,11 @@ public sealed class BList : IBToken
     object IBTokenValue.Value
     {
         get => Value;
-        set => Value = (List<IBTokenValue>)value;
+        set => Value = value switch
+        {
+            List<IBTokenValue> l => l,
+            IList<IBTokenValue> il => new(il),
+        };
     }
 
     public static IBToken DecodeImpl(SliceableStream data, out int length)
