@@ -18,7 +18,7 @@ public sealed class BInteger : IBToken
         Value = value;
     }
 
-    public static IBToken DecodeImpl(ReadOnlySpanStream data, out int length)
+    public static IBToken DecodeImpl(SliceableStream data, out int length)
     {
         if (data[0] != (byte)'i')
             throw new ArgumentException("Message sould start with 'i'", nameof(data));
@@ -26,7 +26,7 @@ public sealed class BInteger : IBToken
         length++;
         return new BInteger(value);
 
-        static (long value, int length) Parse(long value, ReadOnlySpanStream data)
+        static (long value, int length) Parse(long value, SliceableStream data)
         => data switch
         {
             [var i and >= (byte)'0' and <= (byte)'9', (byte)'e', ..] => (value * 10 + (i - (byte)'0'), 2),

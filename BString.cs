@@ -21,19 +21,26 @@ public sealed class BString : IBToken
         RawValue = value.ToArray();
     }
 
+    public BString(byte[] value)
+    {
+        RawValue = value;
+    }
+
     object IBTokenValue.Value
     {
         get => Value;
         set => Value = (string)value;
     }
 
-    public static IBToken DecodeImpl(ReadOnlySpanStream data, out int length)
+    public static IBToken DecodeImpl(SliceableStream data, out int length)
     {
         (var size, var offset) = ParseLength(0, data);
         length = size + offset;
-        return new BString(data.Slice(offset, size).Span);
+        var buffer = new byte[size];
+        data.Slice(offset, size).Read(buffer);
+        return new BString(buffer);
 
-        static (int value, int length) ParseLength(int value, ReadOnlySpanStream data)
+        static (int value, int length) ParseLength(int value, SliceableStream data)
         => data switch
         {
             [var i and >= (byte)'0' and <= (byte)'9', (byte)':', ..] => (value * 10 + (i - (byte)'0'), 2),

@@ -1,21 +1,21 @@
 namespace Torrents;
 
-public class ReadOnlySpanStream : Stream
+public class SpanStream : Stream
 {
-    public ReadOnlySpanStream(ReadOnlyMemory<byte> span)
+    public SpanStream(Memory<byte> span)
     => _memory = span;
 
     public override bool CanRead => true;
 
     public override bool CanSeek => true;
 
-    public override bool CanWrite => false;
+    public override bool CanWrite => true;
 
     public override long Length => _memory.Length;
 
     public override long Position { get; set; }
 
-    private readonly ReadOnlyMemory<byte> _memory;
+    private readonly Memory<byte> _memory;
 
     public ReadOnlySpan<byte> Span => _memory[(int)Position..].Span;
 
@@ -43,5 +43,10 @@ public class ReadOnlySpanStream : Stream
     => throw new NotImplementedException();
 
     public override void Write(byte[] buffer, int offset, int count)
-    => throw new NotImplementedException();
+    {
+        var destination = buffer.AsMemory(offset, count);
+        destination.CopyTo(_memory.Slice((int)Position, count));
+        var read = (int)Math.Min(destination.Length, Length - Position);
+        Position += read;
+    }
 }
