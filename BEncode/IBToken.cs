@@ -1,4 +1,4 @@
-namespace Torrents;
+namespace BEncode;
 
 public interface IBTokenValue
 {

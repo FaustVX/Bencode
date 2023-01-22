@@ -2,6 +2,7 @@ using System.Net;
 using System.Numerics;
 using System.Security.Cryptography;
 using System.Web;
+using BEncode;
 
 namespace Torrents;
 

@@ -1,6 +1,6 @@
 using System.Text;
 
-namespace Torrents;
+namespace BEncode;
 
 public sealed class BString : IBToken
 {

@@ -1,4 +1,4 @@
-namespace Torrents;
+namespace Helpers;
 
 public class ReadOnlySpanStream : Stream
 {

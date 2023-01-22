@@ -1,7 +1,7 @@
 using System.Diagnostics;
 using System.Text;
 
-namespace Torrents;
+namespace BEncode;
 
 [DebuggerDisplay($"{{{nameof(GetDebuggerDisplay)}(),nq}}")]
 public sealed class BInteger : IBToken
