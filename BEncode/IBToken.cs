@@ -1,3 +1,5 @@
+using System.Runtime.CompilerServices;
+
 namespace BEncode;
 
 public interface IBTokenValue
@@ -16,7 +18,16 @@ public interface IBToken : IBTokenValue
         [(byte)'l', ..] => BList.DecodeImpl(data, out length),
         [(byte)'d', ..] => BDictionary.DecodeImpl(data, out length),
         [>= (byte)'1' and <= (byte)'9', ..] => BString.DecodeImpl(data, out length),
-        _ => throw new ArgumentOutOfRangeException(nameof(data), $"{nameof(data)} must start with 'i', 'l', 'd', or an ASCII-encoded integer"),
+        _ => OnDecodeError(data, out length),
     };
+
+    private static IBToken OnDecodeError(SliceableStream stream, out int length, [CallerArgumentExpression(nameof(stream))]string name = null!)
+    {
+        using var sr = new StreamReader(stream);
+        length = 0;
+        var s = sr.ReadToEnd();
+        System.Diagnostics.Debugger.Break();
+        throw new ArgumentOutOfRangeException(name, $"{name} must start with 'i', 'l', 'd', or an ASCII-encoded integer");
+    }
     protected static abstract IBToken DecodeImpl(SliceableStream data, out int length);
 }
