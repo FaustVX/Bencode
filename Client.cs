@@ -1,32 +1,49 @@
 using System.Net;
 using System.Numerics;
-using System.Security.Cryptography;
-using System.Web;
 using BEncode;
 
 namespace Torrents;
 
 public sealed class Client
 {
-    private static string _peerID = GetPeerID();
+    public ushort Port { get; }
 
-    public static async Task<BDictionary> GetTorrentFile(Uri uri)
+    public Client(ushort port)
+    {
+        Port = port;
+        _urlQueryPort = string.Format(_urlQuery, Port.ToString());
+    }
+
+    private static readonly string _peerID = GetPeerID();
+    private static readonly string _urlQuery = $"&peer_id={_peerID}&port={{0}}&compact=0";
+    private readonly string _urlQueryPort = default!;
+
+    public IReadOnlyList<Torrent> Torrents => _torrents;
+    private readonly List<Torrent> _torrents = new();
+
+    public async Task<Torrent> GetTorrentFile(Uri uri)
     {
         var task = await new HttpClient().GetAsync(uri);
         var data = task.Content.ReadAsStream();
-        var token = IBToken.Decode(new(data), out var length);
+        var token = (BDictionary)IBToken.Decode(new(data), out var length);
         if (length == data.Length)
-            return (BDictionary)token;
+        {
+            var torrent = Torrent.Create(token, this);
+            _torrents.Add(torrent);
+            return torrent;
+        }
         throw new Exception();
     }
 
-    public static async Task<IPEndPoint[]> Announce(BDictionary torrent)
+    public async Task<IPEndPoint[]> Announce(Torrent torrent)
     {
-        var announce = ((BString)torrent.Value["announce"]).Value;
-        var info = (BDictionary)torrent.Value["info"];
+        var announce = ((BString)torrent.Datas.Value["announce"]).Value;
+        var info = (BDictionary)torrent.Datas.Value["info"];
+        var storage = (BDictionary)torrent.Datas.Value["storage"];
+
         var byteLength = ((BInteger)info.Value["length"]).Value;
-        var infoHash = SHA1.HashData(info.Encode());
-        var announceKeyed = $"{announce}?info_hash={HttpUtility.UrlEncode(infoHash)}&peer_id={_peerID}&port=56881&uploaded=0&downloaded=0&left={byteLength.ToString()}&compact=0";
+        var infoHash = ((BString)storage.Value["sha1_url"]).Value;
+        var announceKeyed = $"{announce}?info_hash={infoHash}&uploaded=0&downloaded=0&left={byteLength.ToString()}{_urlQueryPort}";
         var get = await new HttpClient()
         {
             DefaultRequestHeaders =
@@ -35,11 +52,18 @@ public sealed class Client
                 { "Connection", "close" },
             }
         }.GetAsync(announceKeyed);
-        get.EnsureSuccessStatusCode();
+        #if !DEBUG
+            get.EnsureSuccessStatusCode();
+        #endif
         var response = (BDictionary)IBToken.Decode(new(get.Content.ReadAsStream()), out var length);
-        return ((BString)response.Value["peers"]).RawValue.Chunk(6)
-            .Select(static peer => (ip: peer.AsMemory(..4), port: peer.AsMemory(^2)))
-            .Select(static peer => new System.Net.IPEndPoint(new System.Net.IPAddress(peer.ip.Span), (peer.port.Span[0] << 8) | peer.port.Span[1]))
+        var peers = response.Value["peers"] switch
+        {
+            BString s => s.RawValue.Chunk(6)
+                .Select(static peer => (ip: peer.AsMemory(..4), port: (peer[^2] << 8) | peer[^1])),
+            BDictionary d => d.Value.Values.Cast<BDictionary>().Select(peer => (ip: ((BString)peer.Value["ip"]).RawValue.AsMemory(), port: (int)((BInteger)peer.Value["port"]).Value))
+        };
+        return peers
+            .Select(static peer => new System.Net.IPEndPoint(new System.Net.IPAddress(peer.ip.Span), peer.port))
             .ToArray();
     }
 

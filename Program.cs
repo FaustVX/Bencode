@@ -1,5 +1,6 @@
 ﻿using Torrents;
 
-var token = await Client.GetTorrentFile(new(@".torrent url"));
-var peers = await Client.Announce(token);
+var client = new Client(56881);
+var token = await client.GetTorrentFile(new(@".torrent url"));
+await token.Announce();
 ;
