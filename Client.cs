@@ -26,13 +26,12 @@ public sealed class Client
         var task = await new HttpClient().GetAsync(uri);
         var data = task.Content.ReadAsStream();
         var token = (BDictionary)IBToken.Decode(new(data), out var length);
-        if (length == data.Length)
-        {
-            var torrent = Torrent.Create(token, this);
-            _torrents.Add(torrent);
-            return torrent;
-        }
-        throw new Exception();
+        if (length != data.Length)
+            throw new Exception();
+
+        var torrent = Torrent.Create(token, this);
+        _torrents.Add(torrent);
+        return torrent;
     }
 
     public async Task<IPEndPoint[]> Announce(Torrent torrent)
@@ -41,21 +40,27 @@ public sealed class Client
         var info = (BDictionary)torrent.Datas.Value["info"];
         var storage = (BDictionary)torrent.Datas.Value["storage"];
 
-        var byteLength = ((BInteger)info.Value["length"]).Value;
         var infoHash = ((BString)storage.Value["sha1_url"]).Value;
-        var announceKeyed = $"{announce}?info_hash={infoHash}&uploaded=0&downloaded=0&left={byteLength.ToString()}{_urlQueryPort}";
+        var byteLength = torrent.TotalLength;
+        announce = $"{announce}?info_hash={infoHash}&uploaded=0&downloaded=0&left={byteLength.ToString()}{_urlQueryPort}";
+
         var get = await new HttpClient()
         {
             DefaultRequestHeaders =
-            {
-                { "User-Agent", "MyTorent 1.0" },
-                { "Connection", "close" },
-            }
-        }.GetAsync(announceKeyed);
-        #if !DEBUG
+                {
+                    { "User-Agent", "MyTorent 1.0" },
+                    { "Connection", "close" },
+                }
+        }.GetAsync(announce);
+
+#if !DEBUG
             get.EnsureSuccessStatusCode();
-        #endif
+#endif
+
         var response = (BDictionary)IBToken.Decode(new(get.Content.ReadAsStream()), out var length);
+        if (length != get.Content.Headers.ContentLength)
+            throw new Exception();
+
         var peers = response.Value["peers"] switch
         {
             BString s => s.RawValue.Chunk(6)

@@ -10,11 +10,36 @@ public sealed class Torrent
 
     public BDictionary Datas { get; }
     public ReadOnlyMemory<IPEndPoint> Peers { get; private set; }
+    public ReadOnlyMemory<File> Pathes { get; }
+    public long TotalLength { get; }
 
     public Torrent(BDictionary dictionary, Client client)
     {
         Datas = dictionary;
         _client = client;
+        var info = (BDictionary)Datas.Value["info"];
+        if (info.Value.TryGetValue("length", out BInteger length))
+        {
+            Pathes = new File[]
+            {
+                new()
+                {
+                    Name = ((BString)info.Value["name"]).Value,
+                    Length = length.Value,
+                },
+            };
+            TotalLength = length.Value;
+        }
+        else if (info.Value.TryGetValue("files", out BList files))
+        {
+            var pathes = files.Value.Cast<BDictionary>().Select(static file => new File()
+            {
+                Length = ((BInteger)file.Value["length"]).Value,
+                Name = Path.Combine(((BList)file.Value["path"]).Value.Cast<BString>().Select(static path => path.Value).ToArray()),
+            }).ToArray();
+            Pathes = pathes;
+            TotalLength = pathes.Sum(static file => file.Length);
+        }
     }
 
     public async Task Announce()
